@@ -137,7 +137,9 @@ function! s:TreeExplorer(split, start, toggle) " <<<
 		" if starting with split, get split parameters from globals
 		let splitMode = (exists("g:treeExplVertical")) ? "vertical " : ""
 		let splitSize = (exists("g:treeExplWinSize")) ? g:treeExplWinSize : 20
-		let cmd = splitMode . splitSize . "new TreeExplorer"
+		" let cmd = "topleft " . splitMode . splitSize . "new TreeExplorer"
+		"" Joey's split:
+		let cmd = splitMode . splitSize . "split TreeExplorer"
 	else
 		let cmd = "e TreeExplorer"
 	endif
@@ -621,10 +623,30 @@ function! s:Activate(how) " <<<
 		elseif a:how == "cur"
 			exec ("tabedit " . f)
 		elseif oldwin == winnr() || (&modified && s:BufInWindows(winbufnr(winnr())) < 2)
-			wincmd p
-			exec ("new " . f)
+			"" If this fires due to &modified, then we end up opening in the
+			"" flipping TreeExplorer window!
+			"" I don't have a problem with &modified because I use &hidden anyway.
+			"" But if &modified and !&hidden, then perhaps we should split to open.
+			"wincmd p
+			exec ("split")
+			" exec ("edit " . f)
+			"" We position the new buffer nicely for MinBufExplorer
+			"" NOTE: This may no longer be needed now I redefined my Ctrl+PageUp/Down.
+			exec ("last")
+			exec ("argedit " . f)
 		else
+			if exists("g:treeExplAutoClose")
+				wincmd c
+			else
+				" echo "VTE on window ".bufname('%')
+				" echo "VTE on window ".bufname('%')." moving..."
+				" wincmd p
+				" echo "VTE moved to window ".bufname('%')
+			endif
 			exec ("edit " . f)
+			" We position the new buffer nicely for MinBufExplorer
+			exec ("last")
+			exec ("argedit " . f)
 		endif
 	endif
 endfunction " >>>
