@@ -39,9 +39,13 @@ let vloaded_tree_explorer=1
 let s:cpo_save = &cpo
 set cpo&vim
 
+let s:VTreeExploreBufferNumber = -1
+
 "" create commands
-command! -n=? -complete=dir VTreeExplore :call s:TreeExplorer(0, '<args>')
-command! -n=? -complete=dir VSTreeExplore :call s:TreeExplorer(1, '<args>')
+command! -n=? -complete=dir VTreeExplore :call s:TreeExplorer(0, '<args>', 0)
+command! -n=? -complete=dir VSTreeExplore :call s:TreeExplorer(1, '<args>', 0)
+command! -n=? -complete=dir VTreeExploreToggle :call s:TreeExplorer(0, '<args>', 1)
+command! -n=? -complete=dir VSTreeExploreToggle :call s:TreeExplorer(1, '<args>', 1)
 
 "" support sessions
 autocmd BufNewFile TreeExplorer VTreeExplore
@@ -92,10 +96,37 @@ function! s:InitWindowVars() " <<<
 	" init help to short version
 	let w:helplines = 1
 
+	let s:VTreeExploreBufferNumber = bufnr('%')
+
 endfunction " >>>
 
 "" TreeExplorer() - set up explorer window
-function! s:TreeExplorer(split, start) " <<<
+function! s:TreeExplorer(split, start, toggle) " <<<
+
+	" New toggling behaviour.
+	if a:toggle
+		" Find the VTE if we are displaying it.
+		if s:VTreeExploreBufferNumber != -1
+			let l:winNum = bufwinnr(s:VTreeExploreBufferNumber)
+			if l:winNum != -1
+				" If we find it, hide it and exit.
+				try
+					exec l:winNum.' wincmd w'
+				catch /./
+					echo "Failed to move to window".l:windNum
+					return -1
+				endtry
+				" echo 'Got to VTreeExploreBuffer window: '.winnr()
+				" Delete the buffer selected.
+				" echo 'About to delete buffer: '.s:VTreeExploreBufferNumber
+				exec('silent! bd '.s:VTreeExploreBufferNumber)
+				let s:VTreeExploreBufferNumber = -1
+				return 0
+			else
+				" echo 'Unable to get to VTreeExploreBuffer window'
+			endif
+		endif
+	endif
 
 	" dir to start in from arg, buff dir, or pwd
 	let fname = (a:start != "") ? a:start : expand ("%:p:h")
